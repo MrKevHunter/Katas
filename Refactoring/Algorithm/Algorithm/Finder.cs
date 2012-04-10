@@ -1,67 +1,66 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Algorithm
 {
-    public class Finder
-    {
-        private readonly List<Thing> _p;
+	public class Finder
+	{
+		private readonly List<Person> _people;
 
-        public Finder(List<Thing> p)
-        {
-            _p = p;
-        }
+		private readonly Dictionary<FindThe, Func<List<Result>, Result>> _lookup = new Dictionary
+			<FindThe, Func<List<Result>, Result>>
+		                                                                          	{
+		                                                                          		{FindThe.Closest, FindClosest},
+		                                                                          		{FindThe.Furthest, FindFurthest}
+		                                                                          	};
 
-        public F Find(FT ft)
-        {
-            var tr = new List<F>();
 
-            for(var i = 0; i < _p.Count - 1; i++)
-            {
-                for(var j = i + 1; j < _p.Count; j++)
-                {
-                    var r = new F();
-                    if(_p[i].BirthDate < _p[j].BirthDate)
-                    {
-                        r.P1 = _p[i];
-                        r.P2 = _p[j];
-                    }
-                    else
-                    {
-                        r.P1 = _p[j];
-                        r.P2 = _p[i];
-                    }
-                    r.D = r.P2.BirthDate - r.P1.BirthDate;
-                    tr.Add(r);
-                }
-            }
+		public Finder(List<Person> people)
+		{
+			_people = people;
+		}
 
-            if(tr.Count < 1)
-            {
-                return new F();
-            }
+		public Result Find(FindThe findThe)
+		{
+			var results = GetListOfPeopleWithBirthDateDifference();
 
-            F answer = tr[0];
-            foreach(var result in tr)
-            {
-                switch(ft)
-                {
-                    case FT.One:
-                        if(result.D < answer.D)
-                        {
-                            answer = result;
-                        }
-                        break;
+			if (results.Count < 1)
+			{
+				return new Result();
+			}
 
-                    case FT.Two:
-                        if(result.D > answer.D)
-                        {
-                            answer = result;
-                        }
-                        break;
-                }
-            }
+			return _lookup[findThe](results);
+		}
 
-            return answer;
-        }
-    }
+		private static Result FindClosest(List<Result> results)
+		{
+			return results.First(x => x.BirthDateDifference == results.Min(y => y.BirthDateDifference));
+		}
+
+		private static Result FindFurthest(List<Result> results)
+		{
+			return results.First(x => x.BirthDateDifference == results.Max(y => y.BirthDateDifference));
+		}
+
+		private List<Result> GetListOfPeopleWithBirthDateDifference()
+		{
+			var results = new List<Result>();
+
+			foreach (var person in _people)
+			{
+				foreach (Person otherPerson in _people.Except(new List<Person> {person}))
+				{
+					var result = new Result();
+					result.Add(person);
+					result.Add(otherPerson);
+					result.BirthDateDifference = result.Person2.BirthDate - result.Person1.BirthDate;
+					result.BirthDateDifference = new TimeSpan(Math.Abs(result.BirthDateDifference.Ticks));
+					results.Add(result);
+				}
+			}
+
+			return results;
+		}
+	}
 }
